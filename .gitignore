@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# Outputs
+output/
+out/
+dist/
+build/
+
+# Large local references
+references/*
+!references/README.md
+!references/grch38/
+!references/grch38/README.md
+
+# OS/editor
+.DS_Store
+.vscode/
