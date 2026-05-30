@@ -1,4 +1,5 @@
 import argparse
+import json
 from pathlib import Path
 
 from target_builder.bed_ops import (
@@ -8,6 +9,8 @@ from target_builder.bed_ops import (
     pad_intervals,
 )
 from target_builder.gtf_extract import iter_cds_intervals_for_transcripts
+from target_builder.manifest import build_manifest
+from target_builder.qc import build_qc_summary
 from target_builder.resolver import resolve_gene_symbol
 from target_builder.transcript_selector import find_mane_transcripts
 
@@ -67,18 +70,47 @@ def build(args) -> None:
 
     gene_labeled_path = outdir / "targets.mane_cds.gene_labeled.bed"
     panel_union_path = outdir / "targets.mane_cds.panel_union.bed"
+    qc_path = outdir / "target_qc.json"
+    manifest_path = outdir / "target_manifest.json"
 
     write_gene_labeled_bed(gene_labeled_path, padded_merged)
     write_panel_union_bed(panel_union_path, panel_union)
 
+    qc = build_qc_summary(
+        requested_genes=requested_genes,
+        resolved_genes=resolved_genes,
+        transcripts=transcripts,
+        gene_labeled_intervals=padded_merged,
+        panel_union_intervals=panel_union,
+    )
+
+    manifest = build_manifest(
+        requested_genes=requested_genes,
+        resolved_genes=resolved_genes,
+        transcripts=transcripts,
+        padding_bp=args.padding,
+        gtf_path=gtf,
+        fai_path=fai,
+        gene_labeled_bed=gene_labeled_path,
+        panel_union_bed=panel_union_path,
+        qc=qc,
+    )
+
+    qc_path.write_text(json.dumps(qc, indent=2) + "\n")
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")
+
     print("Target build complete")
-    print(f"Requested genes: {len(requested_genes)}")
-    print(f"Resolved genes: {len(set(resolved_genes))}")
-    print(f"MANE transcripts: {len(transcripts)}")
-    print(f"Gene-labeled intervals: {len(padded_merged)}")
-    print(f"Panel-union intervals: {len(panel_union)}")
+    print(f"Requested genes: {qc['requested_gene_count']}")
+    print(f"Resolved genes: {qc['resolved_gene_count']}")
+    print(f"MANE transcripts: {qc['mane_transcript_count']}")
+    print(f"Gene-labeled intervals: {qc['gene_labeled_interval_count']}")
+    print(f"Panel-union intervals: {qc['panel_union_interval_count']}")
+    print(f"Gene-labeled total bases: {qc['gene_labeled_total_bases']}")
+    print(f"Panel-union total bases: {qc['panel_union_total_bases']}")
     print(f"Wrote: {gene_labeled_path}")
     print(f"Wrote: {panel_union_path}")
+    print(f"Wrote: {qc_path}")
+    print(f"Wrote: {manifest_path}")
 
 
 def main() -> None:
