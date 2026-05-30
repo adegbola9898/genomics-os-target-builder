@@ -42,6 +42,19 @@ def write_panel_union_bed(path: Path, intervals) -> None:
             out.write(f"{chrom}\t{start}\t{end}\t{label}\n")
 
 
+def write_gene_symbol_mapping(
+    path: Path,
+    requested_genes: list[str],
+    resolved_genes: list[str],
+    transcripts: dict[str, str],
+) -> None:
+    with path.open("wt") as out:
+        out.write("requested_gene\tresolved_gene\ttranscript_id\n")
+        for requested, resolved in zip(requested_genes, resolved_genes, strict=True):
+            transcript_id = transcripts.get(resolved, "")
+            out.write(f"{requested}\t{resolved}\t{transcript_id}\n")
+
+
 def build(args) -> None:
     genes_path = Path(args.genes)
     outdir = Path(args.outdir)
@@ -72,9 +85,11 @@ def build(args) -> None:
     panel_union_path = outdir / "targets.mane_cds.panel_union.bed"
     qc_path = outdir / "target_qc.json"
     manifest_path = outdir / "target_manifest.json"
+    mapping_path = outdir / "gene_symbol_mapping.tsv"
 
     write_gene_labeled_bed(gene_labeled_path, padded_merged)
     write_panel_union_bed(panel_union_path, panel_union)
+    write_gene_symbol_mapping(mapping_path, requested_genes, resolved_genes, transcripts)
 
     qc = build_qc_summary(
         requested_genes=requested_genes,
@@ -111,6 +126,7 @@ def build(args) -> None:
     print(f"Wrote: {panel_union_path}")
     print(f"Wrote: {qc_path}")
     print(f"Wrote: {manifest_path}")
+    print(f"Wrote: {mapping_path}")
 
 
 def main() -> None:
