@@ -13,6 +13,7 @@ from target_builder.manifest import build_manifest
 from target_builder.qc import build_qc_summary
 from target_builder.resolver import resolve_gene_symbol
 from target_builder.transcript_selector import find_mane_transcripts
+from target_builder.checksums import build_sha256s, write_sha256s
 
 
 DEFAULT_GTF = Path("references/grch38/Homo_sapiens.GRCh38.115.gtf.gz")
@@ -86,6 +87,7 @@ def build(args) -> None:
     qc_path = outdir / "target_qc.json"
     manifest_path = outdir / "target_manifest.json"
     mapping_path = outdir / "gene_symbol_mapping.tsv"
+    checksums_path = outdir / "SHA256SUMS.txt"
 
     write_gene_labeled_bed(gene_labeled_path, padded_merged)
     write_panel_union_bed(panel_union_path, panel_union)
@@ -113,6 +115,17 @@ def build(args) -> None:
 
     qc_path.write_text(json.dumps(qc, indent=2) + "\n")
     manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")
+    
+    checksums = build_sha256s(
+        [
+            gene_labeled_path,
+            panel_union_path,
+            qc_path,
+            manifest_path,
+            mapping_path,
+        ]
+    )
+    write_sha256s(checksums_path, checksums)
 
     print("Target build complete")
     print(f"Requested genes: {qc['requested_gene_count']}")
@@ -127,7 +140,7 @@ def build(args) -> None:
     print(f"Wrote: {qc_path}")
     print(f"Wrote: {manifest_path}")
     print(f"Wrote: {mapping_path}")
-
+    print(f"Wrote: {checksums_path}")
 
 def main() -> None:
     parser = argparse.ArgumentParser(prog="target-builder")
