@@ -20,3 +20,8 @@ references/*
 # OS/editor
 .DS_Store
 .vscode/
+
+# Local reference symlinks
+references/grch38/genome.fa
+references/grch38/genome.fa.fai
+references/grch38/Homo_sapiens.GRCh38.115.gtf.gz
